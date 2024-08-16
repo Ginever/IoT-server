@@ -1,0 +1,48 @@
+
+services: # services which our app going to use. (list of containers we want to create)
+  mongo_db: # container name 
+    image: mongo:latest # On which image container will build
+    restart: always
+    networks: # adding network
+      - mern-app
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+  
+  backend:
+    build: .\backend
+    ports:
+     - "3000:3000"
+    environment:
+      PORT: 3000
+      MONGODB_URI: mongodb://mongo_db:27017
+      DB_NAME: sample-db
+    develop:
+      watch:
+        - path: .\backend
+          action: rebuild
+    networks: # adding network
+      - mern-app
+    depends_on: 
+      - mongo_db
+
+  frontend:
+    build: .\frontend
+    ports:
+      - "8080:80"
+    develop:
+      watch:
+        - path: .\frontend
+          action: rebuild
+    networks: # adding network
+      - mern-app
+    depends_on:
+      - mongo_db
+networks: # allow services to talk to each other while providing isolation from other docker container, running on the same host
+  mern-app:
+    driver: bridge
+
+volumes: # enable persistence of database data across container restart
+  mongo-data:
+    driver: local
